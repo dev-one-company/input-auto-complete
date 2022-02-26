@@ -130,6 +130,10 @@ export const AutoCompleteInput: React.FC<Props> = ({
 
     const inputType = (event.nativeEvent as any).inputType as string | null;
 
+    if (onChangeText) {
+      onChangeText(value);
+    }
+
     if (wordMatch && inputType !== "deleteContentBackward") {
       const wordToInsert = wordMatch.replace(wordTyping, "");
       const textToInsert = value + wordToInsert;
@@ -139,9 +143,6 @@ export const AutoCompleteInput: React.FC<Props> = ({
           input.current.setSelectionRange(value.length, textToInsert.length);
         }
       }, 10);
-      if (onChangeText) {
-        onChangeText(value);
-      }
     } else {
       setText(value);
     }
