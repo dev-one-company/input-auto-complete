@@ -1,148 +1,140 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useState } from "react";
 
-import { Container, Input, InputPlaceholder } from "./styles";
-
-interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
+interface Props {
   placeholder?: string;
-  suggestions?: string[];
+  initialValue?: string;
+  style?: React.CSSProperties;
+  initialSuggestions?: string[];
+  onEnterPressed?: (event: React.KeyboardEvent<HTMLInputElement>) => any;
+  onChangeText?: (text: string) => any;
+  clearOnEnter?: boolean;
 }
 
 export const AutoCompleteInput: React.FC<Props> = ({
-  suggestions = [],
-  placeholder = "",
+  initialSuggestions = [],
+  onEnterPressed,
+  onChangeText,
+  initialValue,
+  clearOnEnter,
   ...rest
 }) => {
-  const [text, setText] = useState<string>("");
-  const [suggestion, setSuggestion] = useState<string>("");
-  const [extraSuggestions, setExtraSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
+  const [text, setText] = useState<string>(initialValue || "");
+
   const input = useRef<HTMLInputElement>(null);
 
-  function onChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const value = String(event.target.value);
-    setText(value);
-  }
+  function getWordBasedOnSideSpaces(string: string, currentPos: number) {
+    let right = "";
+    let left = "";
+    let i = currentPos;
 
-  function tab(event: React.KeyboardEvent<HTMLInputElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (suggestion.length > 0) {
-      setText(suggestion);
-      setSuggestion("");
+    while (true) {
+      if (string[i] && string[i] !== " ") {
+        right += string[i];
+      } else {
+        break;
+      }
+      i++;
     }
+    i = currentPos - 1;
+    while (true) {
+      if (i >= 0 && string[i] && string[i] !== " ") {
+        left = string[i] + left;
+      } else {
+        break;
+      }
+      i--;
+    }
+    return left + right;
   }
 
-  function enter() {
-    setExtraSuggestions((state) => {
+  function findWordMatch(string: string) {
+    for (const suggestion of suggestions) {
       if (
-        !state.find((s) => s.trim() === text.trim()) &&
-        !suggestions.find((s) => s.trim() === text.trim())
+        suggestion
+          .trimStart()
+          .toLocaleLowerCase()
+          .startsWith(string.trimStart().toLowerCase()) &&
+        string.trimStart().toLowerCase().length > 0
       ) {
-        return [...state, text.trim()];
+        return suggestion;
       }
-      return state;
-    });
-    setText("");
-    setSuggestion("");
-  }
-
-  function suggest(word: string) {
-    setSuggestion(word);
-  }
-
-  function handleChooseSuggestion() {
-    const searchSuggestionList = [...extraSuggestions, ...suggestions];
-
-    function findStarting() {
-      const starting: string[] = [];
-      for (const suggestion of searchSuggestionList) {
-        const suggestionString = suggestion.trim().toLowerCase();
-        const searchString = text.trim().toLowerCase();
-
-        if (suggestionString.startsWith(searchString)) {
-          starting.push(suggestionString);
-        }
-      }
-      return starting;
     }
 
-    function findMissingLess() {
-      type ML = { total: number; word: string };
-      const starting = findStarting();
+    return null;
+  }
 
-      let missingLess: ML | null = null;
-
-      for (const word of starting) {
-        const missing = word.replace(text, "").length;
-
-        if (missingLess === null) {
-          missingLess = { word, total: missing };
-        } else {
-          if (missing < missingLess.total) {
-            missingLess.total = missing;
-            missingLess.word = word;
+  function eventHandler(event: React.KeyboardEvent<HTMLInputElement>) {
+    const { key } = event;
+    if (key.toLowerCase() === "tab") {
+      event.stopPropagation();
+      event.preventDefault();
+      if (input.current) {
+        if (input.current.selectionStart !== input.current.selectionEnd) {
+          input.current.setSelectionRange(
+            input.current.value.length,
+            input.current.value.length
+          );
+          if (onChangeText) {
+            onChangeText(event.currentTarget.value);
           }
         }
       }
-
-      return missingLess?.word;
-    }
-
-    const betterWord = findMissingLess();
-
-    if (!betterWord) {
-      return suggest("");
-    } else {
-      if (text.length === 0) {
-        return suggest(placeholder);
+    } else if (key.toLowerCase() === "enter") {
+      const words = text.split(" ");
+      const wordsToInsert: string[] = [];
+      for (const word of words) {
+        if (!suggestions.find((w) => w === word.toLowerCase().trim())) {
+          wordsToInsert.push(word.toLowerCase().trim());
+        }
       }
-      return suggest(betterWord);
+
+      setSuggestions((state) => [...state, ...wordsToInsert]);
+
+      if (onEnterPressed) {
+        onEnterPressed(event);
+      }
+      if (clearOnEnter) {
+        setText("");
+      }
     }
   }
 
-  function eventHandlerKeyUp(
-    event: React.KeyboardEvent<HTMLInputElement>
-  ): any {
-    const key = String(event.key).toLowerCase();
+  function onChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value;
 
-    switch (key) {
-      default:
-        return handleChooseSuggestion();
+    const carretPosition = event.currentTarget.selectionStart || 0;
+
+    const wordTyping = getWordBasedOnSideSpaces(value, carretPosition);
+    const wordMatch = findWordMatch(wordTyping);
+
+    const inputType = (event.nativeEvent as any).inputType as string | null;
+
+    if (wordMatch && inputType !== "deleteContentBackward") {
+      const wordToInsert = wordMatch.replace(wordTyping, "");
+      const textToInsert = value + wordToInsert;
+      setText(textToInsert);
+      setTimeout(() => {
+        if (input.current) {
+          input.current.setSelectionRange(value.length, textToInsert.length);
+        }
+      }, 10);
+      if (onChangeText) {
+        onChangeText(value);
+      }
+    } else {
+      setText(value);
     }
   }
-
-  function eventHandlerKeyDown(
-    event: React.KeyboardEvent<HTMLInputElement>
-  ): any {
-    const key = String(event.key).toLowerCase();
-
-    switch (key) {
-      case "tab":
-        return tab(event);
-      case "enter":
-        return enter();
-      default:
-        return handleChooseSuggestion();
-    }
-  }
-
-  useEffect(() => {
-    if (text.length === 0) {
-      setSuggestion(placeholder);
-    }
-  }, [text, placeholder]);
 
   return (
-    <Container>
-      <InputPlaceholder value={suggestion} readOnly />
-      <Input
-        {...rest}
-        ref={input}
-        value={text}
-        onKeyDown={eventHandlerKeyDown}
-        onChange={onChange}
-        onKeyUp={eventHandlerKeyUp}
-      />
-    </Container>
+    <input
+      {...rest}
+      ref={input}
+      type="text"
+      value={text}
+      onChange={onChange}
+      onKeyDown={eventHandler}
+    />
   );
 };
