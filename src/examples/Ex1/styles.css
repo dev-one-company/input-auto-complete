@@ -1,0 +1,27 @@
+input {
+  font-size: 5rem;
+  color: #3d4047;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: 5px solid #c2c2c2;
+  outline: none;
+  transition: all 250ms linear;
+}
+
+input:focus {
+  border-color: #497df5;
+}
+
+input::selection {
+  background: #497df5;
+  color: #f0f0f0;
+}
+
+p {
+  font-size: 3rem;
+  color: #3d4047;
+  margin-top: 2rem;
+  height: 3rem;
+  max-width: 1000px;
+  text-align: center;
+}

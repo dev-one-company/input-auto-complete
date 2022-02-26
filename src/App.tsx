@@ -1,13 +1,6 @@
 import React from "react";
-
-import { AutoCompleteInput } from "./components/AutoCompleteInput";
+import { Ex1 } from "./examples/Ex1";
 
 export const App: React.FC = () => {
-  return (
-    <AutoCompleteInput
-      placeholder="search..."
-      clearOnEnter
-      initialSuggestions={["autocomplete", "words", "test", "with space"]}
-    />
-  );
+  return <Ex1 />;
 };
