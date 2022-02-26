@@ -10,12 +10,17 @@
 }
 
 html,
-body {
+body,
+#root {
   width: 100vw;
   height: 100vh;
 }
 
-body {
+#root {
   background-color: #ebf2ff;
   color: #14181f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
