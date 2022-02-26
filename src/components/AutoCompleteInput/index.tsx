@@ -24,7 +24,7 @@ export const AutoCompleteInput: React.FC<Props> = ({
   const input = useRef<HTMLInputElement>(null);
 
   function isLetterOrNumber(letter: string) {
-    const letters = "abcdefghijklmopqrstuvwxyz";
+    const letters = "abcdefghijklmnopqrstuvwxyz";
     const numbers = "0123456789";
     const all = [...letters.split(""), ...numbers.split("")];
 
