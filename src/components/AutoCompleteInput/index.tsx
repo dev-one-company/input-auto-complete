@@ -23,13 +23,25 @@ export const AutoCompleteInput: React.FC<Props> = ({
 
   const input = useRef<HTMLInputElement>(null);
 
+  function isLetterOrNumber(letter: string) {
+    const letters = "abcdefghijklmopqrstuvwxyz";
+    const numbers = "0123456789";
+    const all = [...letters.split(""), ...numbers.split("")];
+
+    if (all.includes(letter.toLowerCase())) {
+      return true;
+    }
+
+    return false;
+  }
+
   function getWordBasedOnSideSpaces(string: string, currentPos: number) {
     let right = "";
     let left = "";
     let i = currentPos;
 
     while (true) {
-      if (string[i] && string[i] !== " ") {
+      if (string[i] && string[i] !== " " && isLetterOrNumber(string[i])) {
         right += string[i];
       } else {
         break;
@@ -38,7 +50,12 @@ export const AutoCompleteInput: React.FC<Props> = ({
     }
     i = currentPos - 1;
     while (true) {
-      if (i >= 0 && string[i] && string[i] !== " ") {
+      if (
+        i >= 0 &&
+        string[i] &&
+        string[i] !== " " &&
+        isLetterOrNumber(string[i])
+      ) {
         left = string[i] + left;
       } else {
         break;
@@ -81,10 +98,13 @@ export const AutoCompleteInput: React.FC<Props> = ({
         }
       }
     } else if (key.toLowerCase() === "enter") {
-      const words = text.split(" ");
+      const words = text.split(/\W/g);
       const wordsToInsert: string[] = [];
       for (const word of words) {
-        if (!suggestions.find((w) => w === word.toLowerCase().trim())) {
+        if (
+          !suggestions.find((w) => w === word.toLowerCase().trim()) &&
+          word.length > 0
+        ) {
           wordsToInsert.push(word.toLowerCase().trim());
         }
       }
