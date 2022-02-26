@@ -89,8 +89,8 @@ export const AutoCompleteInput: React.FC<Props> = ({
       if (input.current) {
         if (input.current.selectionStart !== input.current.selectionEnd) {
           input.current.setSelectionRange(
-            input.current.value.length,
-            input.current.value.length
+            input.current.selectionEnd,
+            input.current.selectionEnd
           );
           if (onChangeText) {
             onChangeText(event.currentTarget.value);
@@ -120,6 +120,23 @@ export const AutoCompleteInput: React.FC<Props> = ({
     }
   }
 
+  function insertAtPosition(
+    to: string,
+    pos: number,
+    value: string,
+    end: string
+  ) {
+    let str = "";
+
+    for (let i = 0; i < to.length; i++) {
+      str += to[i];
+      if (i === pos - 1) {
+        str += value;
+      }
+    }
+    return str + end;
+  }
+
   function onChange(event: React.ChangeEvent<HTMLInputElement>) {
     const value = event.target.value;
 
@@ -136,11 +153,19 @@ export const AutoCompleteInput: React.FC<Props> = ({
 
     if (wordMatch && inputType !== "deleteContentBackward") {
       const wordToInsert = wordMatch.replace(wordTyping, "");
-      const textToInsert = value + wordToInsert;
+      const textToInsert = insertAtPosition(
+        value,
+        carretPosition,
+        wordToInsert,
+        ""
+      );
       setText(textToInsert);
       setTimeout(() => {
         if (input.current) {
-          input.current.setSelectionRange(value.length, textToInsert.length);
+          input.current.setSelectionRange(
+            carretPosition,
+            carretPosition + wordToInsert.length
+          );
         }
       }, 10);
     } else {
